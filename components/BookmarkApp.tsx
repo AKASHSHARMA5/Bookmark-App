@@ -256,23 +256,32 @@ export default function BookmarkApp({ user }: BookmarkAppProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <header className="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div className="min-h-screen relative">
+      <div className="container mx-auto px-4 py-12 max-w-5xl relative z-10">
+        {/* Header */}
+        <header className="glass rounded-3xl p-8 mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">
-                Smart Bookmark App
+              <h1 className="text-5xl font-bold text-white mb-3 tracking-tight">
+                Smart Bookmark
               </h1>
-              <p className="text-gray-600 mt-1">
-                Welcome, {user.email}
-              </p>
+              <div className="flex items-center gap-2.5 text-gray-400">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <p className="text-sm font-medium">
+                  {user.email?.split('@')[0]}
+                </p>
+                <span className="text-gray-600">•</span>
+                <span className="text-xs text-gray-500">Real-time sync enabled</span>
+              </div>
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              className="btn-secondary flex items-center gap-2 text-sm"
             >
-              Logout
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign out
             </button>
           </div>
         </header>
@@ -283,8 +292,9 @@ export default function BookmarkApp({ user }: BookmarkAppProps) {
         />
 
         {loading ? (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <p className="text-gray-600">Loading bookmarks...</p>
+          <div className="glass rounded-3xl p-16 text-center">
+            <div className="inline-block animate-spin rounded-full h-14 w-14 border-3 border-t-purple-400 border-r-transparent border-b-purple-400 border-l-transparent mb-6"></div>
+            <p className="text-gray-300 text-lg font-medium">Loading your bookmarks...</p>
           </div>
         ) : (
           <BookmarkList 
