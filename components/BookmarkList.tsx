@@ -14,11 +14,13 @@ interface Bookmark {
 interface BookmarkListProps {
   bookmarks: Bookmark[]
   userId: string
+  onBookmarkDeleted?: () => void
 }
 
 export default function BookmarkList({
   bookmarks,
   userId,
+  onBookmarkDeleted,
 }: BookmarkListProps) {
   const supabase = createSupabaseClient()
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -37,6 +39,11 @@ export default function BookmarkList({
         .eq('user_id', userId) // Ensure user can only delete their own bookmarks
 
       if (error) throw error
+      
+      // Trigger refresh callback for immediate UI update
+      if (onBookmarkDeleted) {
+        onBookmarkDeleted()
+      }
     } catch (err: any) {
       alert(err.message || 'Failed to delete bookmark')
     } finally {

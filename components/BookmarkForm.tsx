@@ -5,9 +5,10 @@ import { createSupabaseClient } from '@/lib/supabase/client'
 
 interface BookmarkFormProps {
   userId: string
+  onBookmarkAdded?: () => void
 }
 
-export default function BookmarkForm({ userId }: BookmarkFormProps) {
+export default function BookmarkForm({ userId, onBookmarkAdded }: BookmarkFormProps) {
   const supabase = createSupabaseClient()
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
@@ -34,7 +35,7 @@ export default function BookmarkForm({ userId }: BookmarkFormProps) {
     setLoading(true)
 
     try {
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('bookmarks')
         .insert([
           {
@@ -43,12 +44,19 @@ export default function BookmarkForm({ userId }: BookmarkFormProps) {
             user_id: userId,
           },
         ])
+        .select()
+        .single()
 
       if (insertError) throw insertError
 
       // Reset form
       setUrl('')
       setTitle('')
+      
+      // Trigger refresh callback for immediate UI update
+      if (onBookmarkAdded) {
+        onBookmarkAdded()
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to add bookmark')
     } finally {

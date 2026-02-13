@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
@@ -21,17 +21,41 @@ interface BookmarkAppProps {
 
 export default function BookmarkApp({ user }: BookmarkAppProps) {
   const router = useRouter()
-  const supabase = createSupabaseClient()
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // Fetch bookmarks function (can be called from child components)
+  const fetchBookmarks = useCallback(async () => {
+    const supabase = createSupabaseClient()
+    try {
+      const { data, error } = await supabase
+        .from('bookmarks')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setBookmarks(data || [])
+    } catch (error: any) {
+      console.error('Error fetching bookmarks:', error.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [user.id])
 
   useEffect(() => {
+    const supabase = createSupabaseClient()
+    
     // Fetch initial bookmarks
     fetchBookmarks()
 
     // Set up real-time subscription
     const channel = supabase
-      .channel('bookmarks-changes')
+      .channel('bookmarks-changes', {
+        config: {
+          broadcast: { self: true },
+        },
+      })
       .on(
         'postgres_changes',
         {
@@ -41,8 +65,15 @@ export default function BookmarkApp({ user }: BookmarkAppProps) {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
+          console.log('Realtime event received:', payload.eventType, payload)
+          
           if (payload.eventType === 'INSERT') {
-            setBookmarks((prev) => [payload.new as Bookmark, ...prev])
+            setBookmarks((prev) => {
+              // Check if bookmark already exists to avoid duplicates
+              const exists = prev.some((b) => b.id === payload.new.id)
+              if (exists) return prev
+              return [payload.new as Bookmark, ...prev]
+            })
           } else if (payload.eventType === 'DELETE') {
             setBookmarks((prev) =>
               prev.filter((bookmark) => bookmark.id !== payload.old.id)
@@ -58,29 +89,20 @@ export default function BookmarkApp({ user }: BookmarkAppProps) {
           }
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('Subscription status:', status)
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to real-time updates')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Channel error - real-time subscription failed')
+        }
+      })
 
     return () => {
+      console.log('Cleaning up real-time subscription')
       supabase.removeChannel(channel)
     }
-  }, [user.id, supabase])
-
-  const fetchBookmarks = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('bookmarks')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      setBookmarks(data || [])
-    } catch (error: any) {
-      console.error('Error fetching bookmarks:', error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [user.id, fetchBookmarks])
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -109,14 +131,21 @@ export default function BookmarkApp({ user }: BookmarkAppProps) {
           </div>
         </header>
 
-        <BookmarkForm userId={user.id} />
+        <BookmarkForm 
+          userId={user.id} 
+          onBookmarkAdded={fetchBookmarks}
+        />
 
         {loading ? (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <p className="text-gray-600">Loading bookmarks...</p>
           </div>
         ) : (
-          <BookmarkList bookmarks={bookmarks} userId={user.id} />
+          <BookmarkList 
+            bookmarks={bookmarks} 
+            userId={user.id}
+            onBookmarkDeleted={fetchBookmarks}
+          />
         )}
       </div>
     </div>
