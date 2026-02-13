@@ -2,26 +2,61 @@
 
 A simple bookmark manager with real-time updates built with Next.js, Supabase, and Tailwind CSS.
 
+## Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.local.example .env.local
+# Edit .env.local with your Supabase credentials
+
+# Run the development server
+npm run dev
+```
+
+Visit [http://localhost:3000](http://localhost:3000) and sign in with Google to start managing your bookmarks!
+
 ## Features
 
-- ✅ Google OAuth authentication (no email/password)
-- ✅ Add bookmarks with URL and title
-- ✅ Private bookmarks (users can only see their own)
-- ✅ Real-time updates across tabs without page refresh
-- ✅ Delete bookmarks
-- ✅ Deployed on Vercel
+- ✅ **Google OAuth Authentication** - Secure login with Google only (no email/password)
+- ✅ **Add Bookmarks** - Create bookmarks with URL and optional title
+- ✅ **Delete Bookmarks** - Remove bookmarks with confirmation dialog
+- ✅ **Private Bookmarks** - Row Level Security ensures users only see their own bookmarks
+- ✅ **Real-time Updates** - Changes sync across all open tabs instantly without refresh
+  - INSERT events propagate via `postgres_changes`
+  - DELETE events use both `postgres_changes` and broadcast fallback
+  - UPDATE events supported for future enhancements
+- ✅ **Responsive UI** - Beautiful, modern interface built with Tailwind CSS
+- ✅ **Production Ready** - Deployed on Vercel with proper error handling
 
 ## Tech Stack
 
 - **Framework:** Next.js 14 (App Router)
 - **Backend:** Supabase (Auth, Database, Realtime)
+- **Authentication:** Supabase Auth with Google OAuth + PKCE
+- **Real-time:** Supabase Realtime with `postgres_changes` subscriptions
 - **Styling:** Tailwind CSS
+- **Type Safety:** TypeScript
 
 ## Prerequisites
 
 - Node.js 18+ installed
+- npm or yarn package manager
 - A Supabase account (free tier works)
 - A Google OAuth application set up
+
+## Dependencies
+
+Key dependencies used in this project:
+
+- `next` - Next.js framework with App Router
+- `react` & `react-dom` - React library
+- `@supabase/supabase-js` - Supabase JavaScript client
+- `@supabase/ssr` - Supabase SSR utilities for Next.js
+- `tailwindcss` - Utility-first CSS framework
+- `typescript` - TypeScript for type safety
 
 ## Setup Instructions
 
@@ -61,8 +96,19 @@ npm install
 
 ### 5. Enable Realtime
 
-1. In Supabase dashboard, go to **Database** > **Replication**
-2. Enable replication for the `bookmarks` table
+1. In Supabase dashboard, go to **Database** > **Tables**
+2. Click on the `bookmarks` table
+3. Look for the **Realtime** tab or a green button that says "Realtime enabled"
+4. If Realtime is not enabled, click to enable it (you should see a green indicator)
+5. Alternatively, you can verify Realtime is enabled by running this SQL in **SQL Editor**:
+   ```sql
+   SELECT * FROM pg_publication_tables 
+   WHERE pubname = 'supabase_realtime' AND tablename = 'bookmarks';
+   ```
+   If no rows are returned, run:
+   ```sql
+   ALTER PUBLICATION supabase_realtime ADD TABLE bookmarks;
+   ```
 
 ### 6. Environment Variables
 
@@ -81,6 +127,61 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Testing Real-time Updates
+
+To verify real-time updates are working:
+
+1. Open your app in **two browser tabs** (both logged in as the same user)
+2. Open Developer Console (F12) in both tabs
+3. **Test INSERT:**
+   - In Tab 1: Add a new bookmark
+   - In Tab 2: The bookmark should appear automatically
+   - Check Tab 2 console for: `🔔 INSERT event received`
+4. **Test DELETE:**
+   - In Tab 1: Delete a bookmark
+   - In Tab 2: The bookmark should disappear automatically
+   - Check Tab 2 console for: `🔔 DELETE event received` or `📢 Broadcast DELETE event received`
+
+If real-time updates don't work, check:
+- Console for subscription status: Should see `✅ Successfully subscribed to real-time updates`
+- Supabase Dashboard: Verify Realtime is enabled for the `bookmarks` table
+- Network tab: Check for WebSocket connections to Supabase
+
+## Troubleshooting
+
+### Real-time Updates Not Working
+
+1. **Verify Realtime is enabled:**
+   - Go to Supabase Dashboard → Database → Tables → bookmarks
+   - Check that Realtime is enabled (green indicator)
+
+2. **Check console for errors:**
+   - Look for `❌ Channel error` messages
+   - Verify subscription status shows `SUBSCRIBED`
+
+3. **Verify RLS policies:**
+   - Ensure RLS policies allow SELECT, INSERT, DELETE for authenticated users
+   - Run the SQL from `supabase/schema.sql` if policies are missing
+
+### Authentication Issues
+
+1. **PKCE Error:**
+   - Clear browser cookies and cache
+   - Ensure you're using `@supabase/ssr` package (already included)
+   - Verify cookies are not blocked in browser settings
+
+2. **OAuth Redirect Error:**
+   - Verify redirect URIs match exactly in Google Cloud Console
+   - Check Supabase redirect URL configuration
+   - Ensure URLs use `https` in production
+
+### DELETE Events Not Propagating
+
+If DELETE events don't appear in other tabs:
+- The app includes a broadcast fallback mechanism
+- Check console for `📢 Broadcast DELETE event received` messages
+- Verify both tabs are subscribed to the same broadcast channel
 
 ## Deployment to Vercel
 
@@ -135,16 +236,63 @@ In Supabase dashboard, go to **Authentication** > **URL Configuration** and add:
 │   └── supabase/
 │       ├── client.ts     # Client-side Supabase client
 │       └── server.ts     # Server-side Supabase client
+├── middleware.ts          # Next.js middleware for auth
 └── supabase/
-    └── schema.sql        # Database schema
+    └── schema.sql        # Database schema with RLS policies
 ```
 
 ## How It Works
 
-- **Authentication:** Google OAuth handled by Supabase Auth
-- **Database:** PostgreSQL via Supabase with Row Level Security (RLS) policies
-- **Real-time:** Supabase Realtime subscriptions listen for changes to the bookmarks table
+- **Authentication:** Google OAuth handled by Supabase Auth with PKCE flow for security
+- **Database:** PostgreSQL via Supabase with Row Level Security (RLS) policies ensuring data privacy
+- **Real-time Updates:**
+  - Uses Supabase Realtime `postgres_changes` subscriptions for INSERT, UPDATE, and DELETE events
+  - Separate event handlers for each operation type for better reliability
+  - Broadcast channel fallback mechanism for DELETE events to ensure cross-tab synchronization
+  - Real-time subscriptions filter by `user_id` to only receive events for the logged-in user
 - **Privacy:** RLS policies ensure users can only access their own bookmarks
+- **Cross-tab Sync:** Changes made in one browser tab automatically appear in other open tabs without refresh
+
+## Real-time Implementation Details
+
+The app uses a dual-approach for real-time updates:
+
+1. **Primary Method (postgres_changes):**
+   - Subscribes to PostgreSQL change events via Supabase Realtime
+   - Separate handlers for INSERT, UPDATE, and DELETE events
+   - Filters events by `user_id` to ensure privacy
+
+2. **Fallback Method (Broadcast):**
+   - Uses Supabase broadcast channels for DELETE events
+   - Ensures DELETE operations propagate even if `postgres_changes` has issues
+   - All tabs subscribe to the same broadcast channel
+
+This ensures reliable cross-tab synchronization even in edge cases.
+
+## Common Issues & Solutions
+
+### Issue: Real-time DELETE events not working
+
+**Solution:** The app includes a broadcast fallback. Check console for broadcast messages. If neither method works, verify:
+- Realtime is enabled in Supabase Dashboard
+- RLS policies allow DELETE operations
+- User is properly authenticated
+
+### Issue: "PKCE code verifier not found" error
+
+**Solution:**
+- Clear browser cookies and cache
+- Restart the dev server
+- Ensure `@supabase/ssr` is installed (should be in package.json)
+- Check that cookies are not blocked in browser settings
+
+### Issue: Changes not reflecting in other tabs
+
+**Solution:**
+- Verify both tabs show `✅ Successfully subscribed to real-time updates` in console
+- Check Network tab for WebSocket connections
+- Ensure both tabs are logged in as the same user
+- Try refreshing both tabs
 
 ## License
 

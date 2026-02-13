@@ -32,19 +32,53 @@ export default function BookmarkList({
 
     setDeletingId(id)
     try {
-      const { error } = await supabase
+      console.log('🗑️ Deleting bookmark:', id)
+      
+      // Delete the bookmark
+      // Note: Real-time subscription will handle updates in other tabs
+      const { data, error } = await supabase
         .from('bookmarks')
         .delete()
         .eq('id', id)
         .eq('user_id', userId) // Ensure user can only delete their own bookmarks
+        .select()
 
-      if (error) throw error
+      if (error) {
+        console.error('Delete error:', error)
+        throw error
+      }
       
-      // Trigger refresh callback for immediate UI update
+      console.log('✅ Bookmark deleted successfully:', data)
+      
+      // Broadcast DELETE event to all tabs as fallback
+      // This ensures DELETE events propagate even if postgres_changes doesn't work
+      try {
+        const broadcastChannel = supabase.channel(`bookmarks-broadcast-${userId}`)
+        await broadcastChannel.subscribe()
+        await broadcastChannel.send({
+          type: 'broadcast',
+          event: 'bookmark-deleted',
+          payload: { id: id },
+        })
+        console.log('📢 Broadcast DELETE event sent for bookmark:', id)
+        // Don't remove channel immediately, let other tabs receive the message
+        setTimeout(() => {
+          supabase.removeChannel(broadcastChannel)
+        }, 1000)
+      } catch (broadcastError) {
+        console.warn('⚠️ Failed to broadcast DELETE event:', broadcastError)
+      }
+      
+      // Trigger refresh callback for immediate UI update in same tab
+      // Real-time will handle updates in other tabs
       if (onBookmarkDeleted) {
-        onBookmarkDeleted()
+        // Use setTimeout to avoid blocking the UI
+        setTimeout(() => {
+          onBookmarkDeleted()
+        }, 100)
       }
     } catch (err: any) {
+      console.error('Delete failed:', err)
       alert(err.message || 'Failed to delete bookmark')
     } finally {
       setDeletingId(null)
