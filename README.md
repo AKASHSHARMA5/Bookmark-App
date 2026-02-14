@@ -189,37 +189,111 @@ If DELETE events don't appear in other tabs:
 - Check console for `📢 Broadcast DELETE event received` messages
 - Verify both tabs are subscribed to the same broadcast channel
 
-## Deployment to Vercel
+## Deploy on Vercel (Step-by-Step)
 
-### 1. Push to GitHub
+### Prerequisites
+
+- GitHub account
+- Vercel account (sign up at [vercel.com](https://vercel.com) — you can use “Continue with GitHub”)
+- Project running locally with Supabase and Google OAuth already set up
+
+---
+
+### Step 1: Push your code to GitHub
+
+1. **Create a new repository** on [github.com](https://github.com/new).  
+   - Name it (e.g. `smart-bookmark-app`).  
+   - Do **not** add a README, .gitignore, or license (you already have them).  
+   - Click **Create repository**.
+
+2. **In your project folder**, open a terminal and run:
 
 ```bash
 git init
 git add .
 git commit -m "Initial commit"
-git remote add origin your-repo-url
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
 git push -u origin main
 ```
 
-### 2. Deploy to Vercel
+Replace `YOUR_USERNAME` and `YOUR_REPO_NAME` with your GitHub username and repo name.
 
-1. Go to [vercel.com](https://vercel.com) and sign in
-2. Click **New Project**
-3. Import your GitHub repository
-4. Add environment variables:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-5. Click **Deploy**
+3. **Confirm** your code is on GitHub (refresh the repo page).
 
-### 3. Update Google OAuth Redirect URI
+---
 
-After deployment, update your Google OAuth redirect URI to include:
-- `https://your-vercel-app.vercel.app/auth/callback`
+### Step 2: Import the project on Vercel
 
-### 4. Update Supabase Redirect URL
+1. Go to [vercel.com](https://vercel.com) and sign in (with GitHub if possible).
+2. Click **Add New…** → **Project**.
+3. Under **Import Git Repository**, find your repo and click **Import**.
+4. **Do not** click Deploy yet — add environment variables first (Step 3).
 
-In Supabase dashboard, go to **Authentication** > **URL Configuration** and add:
-- `https://your-vercel-app.vercel.app/auth/callback`
+---
+
+### Step 3: Add environment variables on Vercel
+
+1. On the import screen, open **Environment Variables**.
+2. Add these two variables (use the same values as in your local `.env.local`):
+
+| Name | Value |
+|------|--------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL (e.g. `https://xxxxx.supabase.co`) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
+
+3. Leave the environment as **Production** (or add the same variables for Preview if you use branches).
+4. Click **Deploy**.
+
+---
+
+### Step 4: Get your Vercel URL
+
+1. Wait for the deployment to finish (usually 1–2 minutes).
+2. You’ll see a success screen with a URL like:  
+   `https://your-project-name.vercel.app`  
+   or  
+   `https://your-project-name-xxxx.vercel.app`
+3. Copy this URL — you need it for the next two steps.
+
+---
+
+### Step 5: Add the Vercel URL in Google OAuth
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials**.
+2. Click your **OAuth 2.0 Client ID** (Web application).
+3. Under **Authorized redirect URIs**, click **Add URI** and add:
+   - `https://YOUR_VERCEL_URL/auth/callback`  
+   Example: `https://smart-bookmark-app.vercel.app/auth/callback`
+4. Click **Save**.
+
+---
+
+### Step 6: Add the Vercel URL in Supabase
+
+1. Open your [Supabase Dashboard](https://supabase.com/dashboard) → your project.
+2. Go to **Authentication** → **URL Configuration**.
+3. Under **Redirect URLs**, add:
+   - `https://YOUR_VERCEL_URL/auth/callback`  
+   (same URL as in Step 5)
+4. Click **Save**.
+
+---
+
+### Step 7: Test the live app
+
+1. Open your Vercel URL in a browser (e.g. `https://your-project-name.vercel.app`).
+2. Click **Sign in with Google** and complete sign-in.
+3. Add and delete a bookmark to confirm everything works.
+
+If sign-in fails with a redirect error, double-check that the **exact** Vercel URL (including `https://`) is added in both Google OAuth and Supabase redirect settings.
+
+---
+
+### Optional: Custom domain
+
+- In the Vercel project: **Settings** → **Domains** → add your domain.
+- Then add the same redirect URL with your custom domain in Google OAuth and Supabase (e.g. `https://bookmarks.yourdomain.com/auth/callback`).
 
 ## Project Structure
 
