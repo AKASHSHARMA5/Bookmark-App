@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createSupabaseClient } from '@/lib/supabase/client'
 
-export default function AuthPage() {
+function AuthPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createSupabaseClient()
@@ -132,5 +132,36 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function AuthPageFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-[max(0.75rem,env(safe-area-inset-left))] sm:p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] relative">
+      <div className="glass rounded-2xl sm:rounded-3xl p-6 sm:p-10 md:p-14 max-w-md w-full text-center">
+        <div className="mb-6 sm:mb-10">
+          <div className="inline-block p-3 sm:p-5 bg-white/5 rounded-xl sm:rounded-2xl mb-4 sm:mb-6">
+            <svg className="w-12 h-12 sm:w-16 sm:h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-3 tracking-tight">
+            Smart Bookmark
+          </h1>
+          <p className="text-gray-400 text-sm sm:text-base">Your personal bookmark manager</p>
+        </div>
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-t-white border-r-transparent border-b-white border-l-transparent" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<AuthPageFallback />}>
+      <AuthPageContent />
+    </Suspense>
   )
 }
