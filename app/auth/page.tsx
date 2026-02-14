@@ -59,29 +59,29 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative">
-      <div className="glass rounded-3xl p-12 md:p-14 max-w-md w-full text-center">
+    <div className="min-h-screen flex items-center justify-center p-[max(0.75rem,env(safe-area-inset-left))] sm:p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] relative">
+      <div className="glass rounded-2xl sm:rounded-3xl p-6 sm:p-10 md:p-14 max-w-md w-full text-center">
         {/* Logo */}
-        <div className="mb-10">
-          <div className="inline-block p-5 bg-white/5 rounded-2xl mb-6">
-            <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="mb-6 sm:mb-10">
+          <div className="inline-block p-3 sm:p-5 bg-white/5 rounded-xl sm:rounded-2xl mb-4 sm:mb-6">
+            <svg className="w-12 h-12 sm:w-16 sm:h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
             </svg>
           </div>
-          <h1 className="text-5xl font-bold text-white mb-3 tracking-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-3 tracking-tight">
             Smart Bookmark
           </h1>
-          <p className="text-gray-400 text-base">
+          <p className="text-gray-400 text-sm sm:text-base">
             Your personal bookmark manager
           </p>
         </div>
         
         {error && (
-          <div className="mb-8 bg-red-500/10 border border-red-500/30 text-red-300 p-4 rounded-full flex items-center justify-center gap-3">
+          <div className="mb-6 sm:mb-8 bg-red-500/10 border border-red-500/30 text-red-300 p-3 sm:p-4 rounded-2xl sm:rounded-full flex items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm">
             <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="text-sm font-medium">{error}</span>
+            <span className="font-medium">{error}</span>
           </div>
         )}
         
@@ -89,7 +89,7 @@ export default function AuthPage() {
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="btn-primary w-full flex items-center justify-center gap-3 min-h-[48px] sm:min-h-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             {loading ? (
               <>
@@ -125,7 +125,7 @@ export default function AuthPage() {
           </button>
         </div>
         
-        <div className="mt-10 pt-8 border-t border-white/10">
+        <div className="mt-6 sm:mt-10 pt-6 sm:pt-8 border-t border-white/10">
           <p className="text-gray-500 text-xs">
             Secure authentication powered by Supabase
           </p>

@@ -46,7 +46,8 @@ export default function BookmarkApp({ user }: BookmarkAppProps) {
   useEffect(() => {
     const supabase = createSupabaseClient()
     let channel: ReturnType<typeof supabase.channel> | null = null
-    
+    let broadcastChannelRef: ReturnType<typeof supabase.channel> | null = null
+
     // Set up real-time subscription
     const setupRealtime = async () => {
       // Verify session is available
@@ -173,7 +174,7 @@ export default function BookmarkApp({ user }: BookmarkAppProps) {
         // Also listen to broadcast events as fallback for DELETE
         .on('broadcast', { event: 'bookmark-deleted' }, (payload) => {
           console.log('📢 Broadcast DELETE event received:', payload)
-          const deletedId = payload.payload?.id
+          const deletedId = payload?.payload?.id ?? payload?.id
           if (deletedId) {
             console.log('✅ Removing bookmark via broadcast:', deletedId)
             setBookmarks((prev) => {
@@ -215,12 +216,12 @@ export default function BookmarkApp({ user }: BookmarkAppProps) {
           }
         })
       
-      // Set up separate broadcast channel for DELETE events
-      const broadcastChannel = supabase.channel(broadcastChannelName)
-      broadcastChannel
+      // Set up separate broadcast channel for DELETE events (same name so all tabs receive)
+      broadcastChannelRef = supabase.channel(broadcastChannelName)
+      broadcastChannelRef
         .on('broadcast', { event: 'bookmark-deleted' }, (payload) => {
           console.log('📢 Broadcast DELETE event received on broadcast channel:', payload)
-          const deletedId = payload.payload?.id
+          const deletedId = payload?.payload?.id ?? payload?.id
           if (deletedId) {
             console.log('✅ Removing bookmark via broadcast:', deletedId)
             setBookmarks((prev) => {
@@ -241,12 +242,8 @@ export default function BookmarkApp({ user }: BookmarkAppProps) {
 
     return () => {
       console.log('🧹 Cleaning up real-time subscription')
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
-      // Clean up broadcast channel
-      const broadcastChannel = supabase.channel(`bookmarks-broadcast-${user.id}`)
-      supabase.removeChannel(broadcastChannel)
+      if (channel) supabase.removeChannel(channel)
+      if (broadcastChannelRef) supabase.removeChannel(broadcastChannelRef)
     }
   }, [user.id, fetchBookmarks])
 
@@ -257,26 +254,26 @@ export default function BookmarkApp({ user }: BookmarkAppProps) {
 
   return (
     <div className="min-h-screen relative">
-      <div className="container mx-auto px-4 py-12 max-w-5xl relative z-10">
+      <div className="container mx-auto pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:px-4 pt-6 sm:pt-12 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-12 max-w-5xl relative z-10">
         {/* Header */}
-        <header className="glass rounded-3xl p-8 mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-5xl font-bold text-white mb-3 tracking-tight">
+        <header className="glass rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-2 sm:mb-3 tracking-tight truncate">
                 Smart Bookmark
               </h1>
-              <div className="flex items-center gap-2.5 text-gray-400">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <p className="text-sm font-medium">
+              <div className="flex items-center gap-2 sm:gap-2.5 text-gray-400 flex-wrap">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0"></div>
+                <p className="text-sm font-medium truncate">
                   {user.email?.split('@')[0]}
                 </p>
-                <span className="text-gray-600">•</span>
-                <span className="text-xs text-gray-500">Real-time sync enabled</span>
+                <span className="text-gray-600 hidden sm:inline">•</span>
+                <span className="text-xs text-gray-500 hidden sm:inline">Real-time sync enabled</span>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="btn-secondary flex items-center gap-2 text-sm"
+              className="btn-secondary flex items-center justify-center gap-2 text-sm min-h-[44px] sm:min-h-0 w-full sm:w-auto flex-shrink-0"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -292,9 +289,9 @@ export default function BookmarkApp({ user }: BookmarkAppProps) {
         />
 
         {loading ? (
-          <div className="glass rounded-3xl p-16 text-center">
-            <div className="inline-block animate-spin rounded-full h-14 w-14 border-3 border-t-purple-400 border-r-transparent border-b-purple-400 border-l-transparent mb-6"></div>
-            <p className="text-gray-300 text-lg font-medium">Loading your bookmarks...</p>
+          <div className="glass rounded-2xl sm:rounded-3xl p-8 sm:p-16 text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 sm:h-14 sm:w-14 border-3 border-t-purple-400 border-r-transparent border-b-purple-400 border-l-transparent mb-4 sm:mb-6"></div>
+            <p className="text-gray-300 text-base sm:text-lg font-medium">Loading your bookmarks...</p>
           </div>
         ) : (
           <BookmarkList 

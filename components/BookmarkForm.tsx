@@ -65,16 +65,16 @@ export default function BookmarkForm({ userId, onBookmarkAdded }: BookmarkFormPr
   }
 
   return (
-    <div className="glass rounded-3xl p-8 mb-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">
+    <div className="glass rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-8">
+      <div className="mb-4 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">
           Add New Bookmark
         </h2>
         <p className="text-gray-400 text-sm">
           Save your favorite links for quick access
         </p>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         <div>
           <label
             htmlFor="url"
@@ -109,7 +109,7 @@ export default function BookmarkForm({ userId, onBookmarkAdded }: BookmarkFormPr
           />
         </div>
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm p-4 rounded-full flex items-center gap-3">
+          <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-xs sm:text-sm p-3 sm:p-4 rounded-2xl sm:rounded-full flex items-center gap-2 sm:gap-3">
             <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -119,7 +119,7 @@ export default function BookmarkForm({ userId, onBookmarkAdded }: BookmarkFormPr
         <button
           type="submit"
           disabled={loading}
-          className="btn-primary w-full flex items-center justify-center gap-2 text-base disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="btn-primary w-full flex items-center justify-center gap-2 text-sm sm:text-base min-h-[48px] sm:min-h-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           {loading ? (
             <>
