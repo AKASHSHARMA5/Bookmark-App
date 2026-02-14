@@ -1,6 +1,6 @@
 # Smart Bookmark App
 
-A simple bookmark manager with real-time updates built with Next.js, Supabase, and Tailwind CSS.
+A full-stack bookmark manager with real-time sync across tabs, built with Next.js 14, Supabase, and Tailwind CSS.
 
 ## Quick Start
 
@@ -8,28 +8,28 @@ A simple bookmark manager with real-time updates built with Next.js, Supabase, a
 # Install dependencies
 npm install
 
-# Set up environment variables
-cp .env.local.example .env.local
-# Edit .env.local with your Supabase credentials
+# Set up environment variables (see "Environment Variables" below)
+# Create .env.local with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 # Run the development server
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) and sign in with Google to start managing your bookmarks!
+Visit [http://localhost:3000](http://localhost:3000) and sign in with Google to start managing your bookmarks.
 
 ## Features
 
-- ✅ **Google OAuth Authentication** - Secure login with Google only (no email/password)
-- ✅ **Add Bookmarks** - Create bookmarks with URL and optional title
-- ✅ **Delete Bookmarks** - Remove bookmarks with confirmation dialog
-- ✅ **Private Bookmarks** - Row Level Security ensures users only see their own bookmarks
-- ✅ **Real-time Updates** - Changes sync across all open tabs instantly without refresh
-  - INSERT events propagate via `postgres_changes`
-  - DELETE events use both `postgres_changes` and broadcast fallback
-  - UPDATE events supported for future enhancements
-- ✅ **Responsive UI** - Beautiful, modern interface built with Tailwind CSS
-- ✅ **Production Ready** - Deployed on Vercel with proper error handling
+- ✅ **Google OAuth Authentication** — Secure login with Google only (no email/password)
+- ✅ **Add Bookmarks** — Create bookmarks with URL and optional title
+- ✅ **Delete Bookmarks** — Remove bookmarks with an in-app confirmation modal (no browser `confirm()`)
+- ✅ **Private Bookmarks** — Row Level Security ensures users only see their own bookmarks
+- ✅ **Real-time Updates** — Changes sync across all open tabs without refresh
+  - INSERT events via `postgres_changes`
+  - DELETE events via `postgres_changes` and broadcast fallback for cross-tab sync
+  - UPDATE events supported
+- ✅ **Responsive UI** — Mobile-first layout, touch-friendly controls, safe-area support
+- ✅ **Modern UI** — Glass-style cards, full-width background image, transparent panels
+- ✅ **Production Ready** — Deployable on Vercel with proper error handling
 
 ## Tech Stack
 
@@ -112,13 +112,15 @@ npm install
 
 ### 6. Environment Variables
 
-1. Copy `.env.local.example` to `.env.local`
-2. Fill in your Supabase credentials:
+1. Create a file `.env.local` in the project root (do not commit this file).
+2. Add your Supabase credentials (from Supabase Dashboard → Settings → API):
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+Use your own project URL and anon key; never commit real keys to the repo.
 
 ### 7. Run Development Server
 
@@ -176,6 +178,10 @@ If real-time updates don't work, check:
    - Check Supabase redirect URL configuration
    - Ensure URLs use `https` in production
 
+3. **Google consent screen shows "Signing in to xxx.supabase.co":**
+   - This is expected when using Supabase Auth with Google. The OAuth flow uses Supabase’s callback URL (`https://your-project.supabase.co/auth/v1/callback`), so Google shows that domain.
+   - To improve branding: complete [Google’s app verification](https://support.google.com/cloud/answer/9110914) so your OAuth consent screen can show your app name and logo. For internal or testing apps, the Supabase URL is normal and does not affect security.
+
 ### DELETE Events Not Propagating
 
 If DELETE events don't appear in other tabs:
@@ -225,13 +231,14 @@ In Supabase dashboard, go to **Authentication** > **URL Configuration** and add:
 │   ├── api/
 │   │   └── auth/
 │   │       └── logout/   # Logout endpoint
-│   ├── globals.css       # Global styles
-│   ├── layout.tsx        # Root layout
-│   └── page.tsx          # Home page
+│   ├── globals.css       # Global styles, glass utilities, background
+│   ├── layout.tsx        # Root layout, viewport meta
+│   └── page.tsx          # Home page (server component)
 ├── components/
-│   ├── BookmarkApp.tsx   # Main app component
+│   ├── BookmarkApp.tsx   # Main app, real-time subscription, header
 │   ├── BookmarkForm.tsx  # Add bookmark form
-│   └── BookmarkList.tsx  # Bookmark list with delete
+│   ├── BookmarkList.tsx  # Bookmark list, delete + broadcast
+│   └── DeleteConfirmModal.tsx  # In-app delete confirmation modal
 ├── lib/
 │   └── supabase/
 │       ├── client.ts     # Client-side Supabase client
@@ -293,6 +300,12 @@ This ensures reliable cross-tab synchronization even in edge cases.
 - Check Network tab for WebSocket connections
 - Ensure both tabs are logged in as the same user
 - Try refreshing both tabs
+
+## Security & Submitting the Project
+
+- **Never commit secrets.** Keep `.env` and `.env.local` out of version control (they are in `.gitignore`). Use placeholder values in the README only.
+- **No API keys in code.** All Supabase configuration comes from environment variables.
+- Before pushing or sharing the repo, run `git status` and ensure no `.env` or `.env.local` file is staged.
 
 ## License
 
